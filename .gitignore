@@ -1,0 +1,13 @@
+# build output
+/build/
+/redhat-linux-build/
+*.rpm
+
+# reference sources used during development (not part of the package)
+/external/
+
+# development notes
+/PLAN.md
+
+# site-specific config (the published sample is *.sample.cfg)
+/configs/xrootd-multiuser-x509map.cfg

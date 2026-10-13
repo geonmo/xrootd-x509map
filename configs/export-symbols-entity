@@ -1,0 +1,6 @@
+{
+global:
+  SecEntityPin*;
+local:
+  *;
+};

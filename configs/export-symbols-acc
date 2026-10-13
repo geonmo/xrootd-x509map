@@ -1,0 +1,7 @@
+{
+global:
+  XrdAccAuthorizeObjAdd*;
+  XrdAccAuthorizeObject2*;
+local:
+  *;
+};

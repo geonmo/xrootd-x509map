@@ -1,0 +1,28 @@
+# x509map local-user DN map (libXrdSecEntityX509Map / libXrdAccX509Map "localmap=")
+#
+# A DN that matches here is mapped to the site-local account, so files land
+# on Lustre with the user's own uid. First matching rule wins. A rule whose
+# account is unsafe, missing, or below minuid/mingid does not deny; matching
+# continues with the next rule and then with the VOMS map.
+#
+# Syntax (one rule per line, '#' starts a comment outside quotes):
+#   "<exact DN>"                 <account>
+#   glob  "<DN with * ? (...)>"  <account or template>
+#   regex "<ECMAScript regex>"   <account or template>
+# Templates: $1..$9 or ${n} = capture group n, $$ = literal '$'.
+# Inside quotes: \" \' \/ \t \n \r \f \\ (regex lines keep other escapes
+# such as \. and \d as-is). Patterns are anchored to the whole DN.
+#
+# Exact DNs (DNs may contain spaces):
+#"/DC=org/DC=example/OU=People/CN=12345678 Alice Kim"                          alice
+#"/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=jdoe/CN=123456/CN=John Doe"   jdoe
+#
+# glob: CN is the account name. A glob must begin with a literal DN prefix
+# that contains at least one "/X=" attribute, so "*..." is rejected.
+#glob  "/DC=org/DC=example/OU=Site/CN=(*)"                                    $1
+#
+# regex: robot certificates "CN=Robot: <account>-<anything>"
+#regex "/DC=org/DC=example/OU=Site/CN=Robot: ([a-z0-9]+)-.*"                   $1
+#
+# regex: CERN DN with login in the first CN, mapped to a local account
+#regex "/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=(jdoe|asmith)/CN=[0-9]+/CN=.*" $1

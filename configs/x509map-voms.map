@@ -1,0 +1,14 @@
+# x509map VOMS FQAN map (libXrdSecEntityX509Map / libXrdAccX509Map "vomsmap=")
+#
+# Same syntax as the XRootD voms-mapfile: "<FQAN pattern>" <account>.
+# The client's FQANs are tried in VOMS order (primary first); for each FQAN
+# the rules are scanned top to bottom and the first match wins, so list
+# specific roles before wildcards. '*' inside an element is a wildcard and
+# a trailing "/*" matches any deeper group, role and capability.
+# A more specific rule never matches a more generic FQAN.
+"/cms/Role=production/Capability=NULL"  cmsprod
+"/cms/Role=lcgadmin/Capability=NULL"    cmsprod
+"/cms/Role=pilot/Capability=NULL"       cmspilot
+"/cms/*"                                cms
+#"/alice/*"                             alice
+#"/belle/*"                             belle

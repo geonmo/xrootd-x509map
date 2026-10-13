@@ -1,0 +1,10 @@
+# Example acc.authdb for use with libXrdAccX509Map (CMS-style namespace under /xrd).
+#
+# 'u' rules match request.name, i.e. the account chosen by the x509map plugins
+# (or by a SciToken / macaroon). 'g' rules still match the VOMS groups.
+# Do NOT add "u *" with write privileges: it also matches anonymous HTTPS
+# clients, which xrootd-multiuser then runs as the daemon uid.
+u cmsprod /xrd rwildn
+u = /xrd/store/user/@=/ a /xrd/store/group a /xrd/store/unmerged a /xrd/store/temp a /xrd/store/test a /xrd rl
+g /cms /xrd/store/group a /xrd/store/unmerged a /xrd/store/temp a /xrd/store/test a /xrd/store/user a /xrd rl
+u cms /xrd/store/group a /xrd/store/unmerged a /xrd/store/temp a /xrd/store/test a /xrd/store/user a /xrd rl
