@@ -153,6 +153,7 @@ if exec xrootd
     ...
     http.secxtractor libXrdVoms.so
     http.header2cgi Authorization authz
+    http.exthandler xrdtpc libXrdHttpTPC.so
     http.exthandler xrdmacaroons libXrdMacaroons.so
 fi
 
@@ -222,6 +223,7 @@ The authdb still decides which paths an account may use; x509map only chooses th
 - **HTTPS without a certificate** (token-only clients, macaroon TPC, and so on) is passed through by x509map, and authdb decides.
 - **Do not configure `http.gridmap`**, for the same reason as the gsi `-gridmap`. If you do, DNs mapped there (`gridmap.name=1`) become the first-priority exception.
 - Keep `http.header2cgi Authorization authz`. SciTokens/Macaroons need it to read HTTP Bearer tokens.
+- Keep `http.exthandler xrdtpc libXrdHttpTPC.so` if FTS/Rucio transfer data to this server: FTS sends HTTP (WebDAV) `COPY` requests, usually authenticated with a macaroon or token. Without the handler these requests are dropped and the transfers fail. x509map does not change how TPC is authorized.
 - **Macaroon issuance** (`http.exthandler xrdmacaroons`): the `name:` caveat of a macaroon is built from `SecEntity.name`. x509map also replaces `name` with the mapped account on HTTP requests. So a macaroon obtained with a certificate and then used without a certificate still runs under the same account in multiuser. This always applies for HTTPS (`prot=https`). For HTTPS with VOMS (`prot=gsi`), it applies only when `sec.entitylib` is also configured, because the plugin uses a marker left by `sec.entitylib` to tell xroot and HTTP entities apart.
 
 ### 3.8 Relationship with xrootd-multiuser
@@ -397,6 +399,7 @@ If you also enable `acc.audit deny` (or `deny grant`), the result of the authdb 
 | Users with a VOMS role are mapped to the generic VO account | The role line is missing or below the `/vo/*` wildcard in the VOMS map; a `-gridmap`/`http.gridmap` maps the DN first (gridmap has first priority); or `grpopt=usefirst` drops the secondary FQAN |
 | VOMS users are denied with `no VOMS mapping` although the map is right | The VO's `.lsc` file is missing under `/etc/grid-security/vomsdir`, so no FQANs were extracted (check with debug) |
 | x509map denies even though there is a valid token | Wrong `ofs.authlib ++` order — x509map must be the first line |
+| multiuser log `Multiuser denying access: XRootD mapped request to username that does not exist: <hash>.0` for HTTPS clients | Harmless. XrdHttp logs the client in under its certificate subject hash before any request is authorized, and multiuser logs this for that login. The requests themselves run under the account set by x509map, SciTokens or Macaroons. It is not shown when `http.gridmap` maps the DN, which the sample configuration does not use |
 | multiuser log `Anonymous GSI client; cannot change FS UIDs` | multiuser writes this for requests whose mapping failed. x509map denies the same request, so no file is created. If you see it for a mapped user, check whether `ofs.authorize` is missing |
 | Map was edited but the change does not take effect | Wait for `reloadsec`. Denials may remain cached until `negcacheto`. A gsi/HTTP grid-mapfile, if used, is cached by XRootD itself (restart, or `-gmapto`) |
 | Mapping succeeds but multiuser denies | `multiuser.minuid/mingid` is greater than the plugin's `minuid/mingid` — make the values match |

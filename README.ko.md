@@ -152,6 +152,7 @@ if exec xrootd
     ...
     http.secxtractor libXrdVoms.so
     http.header2cgi Authorization authz
+    http.exthandler xrdtpc libXrdHttpTPC.so
     http.exthandler xrdmacaroons libXrdMacaroons.so
 fi
 
@@ -221,6 +222,7 @@ ofs.authlib ++ libXrdAccSciTokens.so …     # 마지막 줄 = 가장 바깥 = �
 - **인증서 없는 HTTPS**(토큰 전용 클라이언트, macaroon TPC 등)는 x509map이 그대로 통과시키고 authdb가 결정합니다.
 - gsi `-gridmap`과 같은 이유로 **`http.gridmap`은 설정하지 마세요.** 설정하면 여기서 매핑된 DN(`gridmap.name=1`)이 1순위 예외가 됩니다.
 - `http.header2cgi Authorization authz`는 그대로 둡니다. SciTokens/Macaroons가 HTTP Bearer 토큰을 읽는 데 필요합니다.
+- FTS/Rucio가 이 서버로 데이터를 전송한다면 `http.exthandler xrdtpc libXrdHttpTPC.so`를 그대로 두세요. FTS는 HTTP(WebDAV) `COPY` 요청을 보내고, 보통 macaroon이나 토큰으로 인증합니다. 이 핸들러가 없으면 요청이 처리되지 않고 끊겨 전송이 실패합니다. x509map은 TPC 인가 방식을 바꾸지 않습니다.
 - **macaroon 발급**(`http.exthandler xrdmacaroons`): macaroon의 `name:` caveat는 `SecEntity.name`에서 만들어집니다. x509map은 HTTP 요청에서도 `name`을 매핑된 계정으로 바꿉니다. 그래서 인증서로 받은 macaroon을 인증서 없이 써도 같은 계정으로 multiuser가 동작합니다. 이 동작은 HTTPS(`prot=https`)에서는 항상 적용됩니다. VOMS가 있는 HTTPS(`prot=gsi`)에서는 `sec.entitylib`도 설정된 경우에만 적용됩니다. 플러그인이 xroot와 HTTP 엔티티를 구분하는 데 `sec.entitylib`가 남기는 표시를 쓰기 때문입니다.
 
 ### 3.8 xrootd-multiuser와의 관계
@@ -396,6 +398,7 @@ x509mapacc_Map: local rule line 3 matched dn=… but account 'jdoe' does not exi
 | VOMS 역할이 있는 사용자가 VO 공통 계정으로 매핑됨 | VOMS 맵에 해당 역할 줄이 없거나 `/vo/*` 와일드카드보다 아래에 있음, `-gridmap`/`http.gridmap`이 DN을 먼저 매핑함 (gridmap 1순위), 또는 `grpopt=usefirst`로 secondary FQAN이 빠짐 |
 | 맵이 맞는데도 VOMS 사용자가 `no VOMS mapping`으로 거부됨 | `/etc/grid-security/vomsdir` 아래에 해당 VO의 `.lsc` 파일이 없어서 FQAN이 추출되지 않음 (debug로 확인) |
 | 유효 토큰이 있는데 x509map이 거부 | `ofs.authlib ++` 순서 오류 — x509map이 첫 줄이어야 함 |
+| HTTPS 클라이언트에 대해 multiuser 로그 `Multiuser denying access: XRootD mapped request to username that does not exist: <hash>.0` | 무시해도 됩니다. XrdHttp는 요청을 인가하기 전에 인증서 subject hash 이름으로 클라이언트를 로그인시키고, multiuser가 그 로그인에 대해 이 로그를 남깁니다. 실제 요청은 x509map, SciTokens, Macaroons가 정한 계정으로 실행됩니다. `http.gridmap`이 DN을 매핑하는 경우에는 보이지 않는데, 샘플 설정은 `http.gridmap`을 쓰지 않습니다 |
 | multiuser 로그 `Anonymous GSI client; cannot change FS UIDs` | 매핑 실패한 요청에서 multiuser가 남기는 로그입니다. x509map이 같은 요청을 거부하므로 파일은 생기지 않습니다. 매핑된 사용자에게서 보이면 `ofs.authorize` 누락 여부를 확인하세요 |
 | 맵을 고쳤는데 반영 안 됨 | `reloadsec` 대기. 거부 결과는 `negcacheto`까지 남을 수 있음. gsi/HTTP grid-mapfile을 쓴다면 그것은 XRootD가 따로 캐시함 (재시작 또는 `-gmapto`) |
 | 매핑은 성공했는데 multiuser가 거부 | `multiuser.minuid/mingid`가 플러그인 `minuid/mingid`보다 큼 — 값을 맞추세요 |
