@@ -8,17 +8,23 @@ License:   Apache-2.0
 # git archive --prefix=xrootd-x509map-%{version}/ -o ~/rpmbuild/SOURCES/xrootd-x509map-%{version}.tar.gz HEAD
 Source0:   %{name}-%{version}.tar.gz
 
-%define xrootd_current_major 5
-%define xrootd_current_minor 4
-%define xrootd_next_major 6
+# xrootd major to build against (5 or 6): rpmbuild --define 'xrootd_major 6'
+%{!?xrootd_major: %global xrootd_major 5}
+%global xrootd_next_major %{lua: print(tonumber(rpm.expand("%{xrootd_major}")) + 1)}
+
+%if %{xrootd_major} == 5
+%global xrootd_current_minor 4
+%else
+%global xrootd_current_minor 0
+%endif
 
 BuildRequires: cmake >= 3.16
 BuildRequires: gcc-c++
-BuildRequires: xrootd-server-devel >= 1:%{xrootd_current_major}.%{xrootd_current_minor}
+BuildRequires: xrootd-server-devel >= 1:%{xrootd_major}.%{xrootd_current_minor}
 BuildRequires: xrootd-server-devel <  1:%{xrootd_next_major}
 BuildRequires: gtest-devel
 
-Requires: xrootd-server >= 1:%{xrootd_current_major}.%{xrootd_current_minor}
+Requires: xrootd-server >= 1:%{xrootd_major}.%{xrootd_current_minor}
 Requires: xrootd-server <  1:%{xrootd_next_major}.0.0-1
 Requires: xrootd-voms
 Recommends: xrootd-multiuser
@@ -48,8 +54,8 @@ Two XRootD plugins sharing one mapping core:
 %files
 %license LICENSE NOTICE
 %{_docdir}/%{name}
-%{_libdir}/libXrdSecEntityX509Map-5.so
-%{_libdir}/libXrdAccX509Map-5.so
+%{_libdir}/libXrdSecEntityX509Map-%{xrootd_major}.so
+%{_libdir}/libXrdAccX509Map-%{xrootd_major}.so
 %config(noreplace) %{_sysconfdir}/xrootd/x509map-local.map
 %config(noreplace) %{_sysconfdir}/xrootd/x509map-voms.map
 %config(noreplace) %{_sysconfdir}/xrootd/x509map-authdb
