@@ -33,11 +33,15 @@ add_compile_definitions(_POSIX_C_SOURCE=200809L _DEFAULT_SOURCE)
 
 # Mapping core, linked statically into both plugins.
 add_library(X509MapCore OBJECT src/X509MapRules.cc src/X509Mapper.cc)
-target_include_directories(X509MapCore PUBLIC ${PROJECT_SOURCE_DIR}/src ${XROOTD_INCLUDES})
+target_include_directories(X509MapCore PUBLIC ${PROJECT_SOURCE_DIR}/src)
+# XRootD headers as SYSTEM: their own warnings (e.g. unused parameters in 6.x inline
+# defaults) must not fail our -Werror build
+target_include_directories(X509MapCore SYSTEM PUBLIC ${XROOTD_INCLUDES})
 
 function(x509map_plugin target source symfile)
   add_library(${target} MODULE ${source} $<TARGET_OBJECTS:X509MapCore>)
-  target_include_directories(${target} PRIVATE ${PROJECT_SOURCE_DIR}/src ${XROOTD_INCLUDES})
+  target_include_directories(${target} PRIVATE ${PROJECT_SOURCE_DIR}/src)
+  target_include_directories(${target} SYSTEM PRIVATE ${XROOTD_INCLUDES})
   target_link_libraries(${target} PRIVATE ${XROOTD_UTILS_LIB})
   target_link_options(${target} PRIVATE
     -Wl,--no-undefined
